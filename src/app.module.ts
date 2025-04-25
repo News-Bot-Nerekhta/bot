@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-
+import { TelegramModule } from './telegram/telegram.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -23,6 +23,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       },
     }),
     ScheduleModule.forRoot(),
+    TelegramModule,
   ],
   providers: [],
 })
