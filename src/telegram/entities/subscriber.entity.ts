@@ -5,8 +5,8 @@ export class Subscriber {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  telegram_id: number;
+  @Column({ type: 'bigint', unique: true })
+  telegram_id: string;
 
   @Column('text', { array: true, default: [] })
   categories: string[];
