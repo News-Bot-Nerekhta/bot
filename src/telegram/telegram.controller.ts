@@ -17,4 +17,4 @@ export class TelegramController {
     await this.telegramService.notifySubscribers(message);
     return { success: true };
   }
-} 
+}

@@ -27,4 +27,4 @@ import { TelegramModule } from './telegram/telegram.module';
   ],
   providers: [],
 })
-export class AppModule {} 
+export class AppModule {}
