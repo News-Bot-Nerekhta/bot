@@ -139,11 +139,7 @@ export class TelegramService {
     this.bot.launch();
   }
 
-  async notifySubscribers(
-    title: string,
-    message: string,
-    category: string = 'all',
-  ) {
+  async notifySubscribers(message: string, category: string = 'all') {
     const subscribers = await this.subscriberRepository.find();
 
     for (const subscriber of subscribers) {
