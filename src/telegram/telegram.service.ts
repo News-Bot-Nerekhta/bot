@@ -12,6 +12,7 @@ export class TelegramService {
   private readonly categories = {
     power: 'Отключение электроснабжения',
     water: 'Отключение воды',
+    other: 'Другие новости',
     all: 'Все новости',
   };
 
@@ -138,7 +139,11 @@ export class TelegramService {
     this.bot.launch();
   }
 
-  async notifySubscribers(message: string, category: string = 'all') {
+  async notifySubscribers(
+    title: string,
+    message: string,
+    category: string = 'all',
+  ) {
     const subscribers = await this.subscriberRepository.find();
 
     for (const subscriber of subscribers) {
@@ -147,7 +152,45 @@ export class TelegramService {
           subscriber.categories.includes(category) ||
           subscriber.categories.includes('all')
         ) {
-          await this.bot.telegram.sendMessage(subscriber.telegram_id, message);
+          const imageMatch = message.match(
+            /📷 Изображения:\s*([\s\S]*?)(?=\n\n|$)/,
+          );
+          if (imageMatch) {
+            const imageUrls = imageMatch[1]
+              .split('\n')
+              .map((url) => url.trim())
+              .filter((url) => url.startsWith('http'));
+
+            const cleanMessage = message
+              .replace(/📷 Изображения:[\s\S]*?(?=\n\n|$)/, '')
+              .trim();
+
+            if (imageUrls.length === 1) {
+              await this.bot.telegram.sendPhoto(
+                subscriber.telegram_id,
+                imageUrls[0],
+                {
+                  caption: cleanMessage,
+                },
+              );
+            } else if (imageUrls.length > 1) {
+              const media = imageUrls.map((url, index) => ({
+                type: 'photo' as const,
+                media: url,
+                caption: index === 0 ? cleanMessage : undefined,
+              }));
+
+              await this.bot.telegram.sendMediaGroup(
+                subscriber.telegram_id,
+                media,
+              );
+            }
+          } else {
+            await this.bot.telegram.sendMessage(
+              subscriber.telegram_id,
+              message,
+            );
+          }
         }
       } catch (error) {
         this.logger.error(
@@ -156,12 +199,5 @@ export class TelegramService {
         );
       }
     }
-  }
-
-  determineCategory(title: string): string {
-    title = title.toLowerCase();
-    if (title.includes('электроснабжен')) return 'power';
-    if (title.includes('вода') || title.includes('водоснабжен')) return 'water';
-    return 'all';
   }
 }
