@@ -8,5 +8,6 @@ import { Subscriber } from './entities/subscriber.entity';
   imports: [TypeOrmModule.forFeature([Subscriber])],
   providers: [TelegramService],
   controllers: [TelegramController],
+  exports: [TelegramService],
 })
 export class TelegramModule {}

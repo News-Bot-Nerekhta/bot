@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Telegraf, Markup } from 'telegraf';
 import { Subscriber } from './entities/subscriber.entity';
+import { InputMediaPhoto } from 'telegraf/types';
 
 @Injectable()
 export class TelegramService {
@@ -195,5 +196,48 @@ export class TelegramService {
         );
       }
     }
+  }
+
+  async notifySubscribersWithMedia(
+    text: string,
+    imageUrls: string[],
+    category?: string,
+  ): Promise<void> {
+    const subscribers = await this.getSubscribers(category);
+
+    for (const chatId of subscribers) {
+      try {
+        if (imageUrls.length === 0) {
+          await this.bot.telegram.sendMessage(chatId, text);
+        } else if (imageUrls.length === 1) {
+          await this.bot.telegram.sendPhoto(chatId, imageUrls[0], {
+            caption: text,
+          });
+        } else {
+          const media: InputMediaPhoto[] = imageUrls.map((url, index) => ({
+            type: 'photo',
+            media: url,
+            caption: index === 0 ? text : undefined,
+          }));
+
+          await this.bot.telegram.sendMediaGroup(chatId, media);
+        }
+      } catch (error) {
+        this.logger.error(
+          `Ошибка при отправке сообщения в чат ${chatId}:`,
+          error,
+        );
+      }
+    }
+  }
+
+  private async getSubscribers(category: string = 'all'): Promise<string[]> {
+    const subscribers = await this.subscriberRepository.find();
+    return subscribers
+      .filter(
+        (sub) =>
+          sub.categories.includes(category) || sub.categories.includes('all'),
+      )
+      .map((sub) => sub.telegram_id);
   }
 }
