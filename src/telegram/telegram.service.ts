@@ -149,43 +149,37 @@ export class TelegramService {
           subscriber.categories.includes(category) ||
           subscriber.categories.includes('all')
         ) {
-          const imageMatch = message.match(
-            /📷 Изображения:\s*([\s\S]*?)(?=\n\n|$)/,
-          );
-          if (imageMatch) {
-            const imageUrls = imageMatch[1]
-              .split('\n')
-              .map((url) => url.trim())
-              .filter((url) => url.startsWith('http'));
+          let cleanMessage = message
+            .replace(/📷 Изображения:[\s\S]*?(?=\n\n|$)/, '')
+            .trim();
+          cleanMessage = cleanMessage.replace(/\n{2,}/g, '\n\n');
 
-            const cleanMessage = message
-              .replace(/📷 Изображения:[\s\S]*?(?=\n\n|$)/, '')
-              .trim();
+          const imageUrls =
+            message.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif))/gi) || [];
 
-            if (imageUrls.length === 1) {
-              await this.bot.telegram.sendPhoto(
-                subscriber.telegram_id,
-                imageUrls[0],
-                {
-                  caption: cleanMessage,
-                },
-              );
-            } else if (imageUrls.length > 1) {
-              const media = imageUrls.map((url, index) => ({
-                type: 'photo' as const,
-                media: url,
-                caption: index === 0 ? cleanMessage : undefined,
-              }));
-
-              await this.bot.telegram.sendMediaGroup(
-                subscriber.telegram_id,
-                media,
-              );
-            }
-          } else {
+          if (imageUrls.length === 0) {
             await this.bot.telegram.sendMessage(
               subscriber.telegram_id,
-              message,
+              cleanMessage,
+            );
+          } else if (imageUrls.length === 1) {
+            await this.bot.telegram.sendPhoto(
+              subscriber.telegram_id,
+              imageUrls[0],
+              {
+                caption: cleanMessage,
+              },
+            );
+          } else {
+            const media = imageUrls.map((url, index) => ({
+              type: 'photo' as const,
+              media: url,
+              caption: index === 0 ? cleanMessage : undefined,
+            }));
+
+            await this.bot.telegram.sendMediaGroup(
+              subscriber.telegram_id,
+              media,
             );
           }
         }
